@@ -19,6 +19,7 @@
 #include <sys/queue.h>
 #include <sys/errno.h>
 #include "stringhash.h"
+#include "stringarray.h"
 
 // Example / test code
 int main(int argc, char *argv[])
@@ -101,5 +102,40 @@ int main(int argc, char *argv[])
     stringhash_destroy(hash);
     t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
     printf("Destroyed hash in %1.3f ms\n", (t2-t1)/1000000.0);
-    printf("Tests Completed\n");
+    printf("Hash Tests Completed\n");
+    stringarray_t array = stringarray_create();
+    t1 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    for (i=0; i<testsize; i++) {
+        snprintf(key, 64, "value%zu", i);
+        stringarray_push(array, key);
+    };
+    t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    printf("Created array in %1.3f ms\n", (t2-t1)/1000000.0);
+    value = stringarray_copyValue(array, 0);
+    printf("value for array[0]: \"%s\"\n", value);
+    if (value) free(value);
+    t1 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    value = stringarray_copyValue(array, testsize/2);
+    free(value);
+    t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    value = stringarray_pop(array);
+    printf("value for pop array: \"%s\"\n", value);
+    free(value);
+    value = stringarray_pop(array);
+    printf("value for pop array: \"%s\"\n", value);
+    free(value);
+    value = stringarray_shift(array);
+    printf("value for shift array: \"%s\"\n", value);
+    free(value);
+    value = stringarray_shift(array);
+    printf("value for shift array: \"%s\"\n", value);
+    free(value);
+    printf("iterated array in %1.3f ms\n", (t2-t1)/1000000.0);
+    char **values = stringarray_copyAllValues(array);
+    if (values) {
+        printf("values[0] = %s\n", values[0]);
+        printf("values[%zu] = %s\n", stringarray_count(array)-1, values[stringarray_count(array)-1]);
+        free(values);
+    }
+    stringarray_destroy(array);
 }

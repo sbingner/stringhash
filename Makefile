@@ -8,9 +8,7 @@ CC      = xcrun clang
 
 .PHONY: all clean
 
-all: $(OUTDIR)/libstringhash.dylib $(OUTDIR)/libstringhash.a $(OUTDIR)/hashtest
-
-stringhash.o stringhash.d: stringhash.c
+all: $(OUTDIR)/libstringhash.dylib $(OUTDIR)/libstringhash.a $(OUTDIR)/test $(OUTDIR)/libstringarray.dylib $(OUTDIR)/libstringhash.a
 
 %.o: %.c %.d Makefile
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -24,7 +22,7 @@ $(OUTDIR)/lib%.a: %.o | $(OUTDIR)
 $(OUTDIR):
 	mkdir -p $@
 
-$(OUTDIR)/hashtest: main.c $(OUTDIR)/libstringhash.a | $(OUTDIR)
+$(OUTDIR)/test: main.c $(OUTDIR)/libstringhash.a $(OUTDIR)/libstringarray.a | $(OUTDIR)
 	$(CC) $(LDFLAGS) -o $@ $^
 
 clean:
