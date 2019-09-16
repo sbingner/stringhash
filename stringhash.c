@@ -215,6 +215,7 @@ char **stringhash_copyAllKeys(stringhash_t hash) {
         }
     }
     char *buffer = malloc(mem_size);
+    if (!buffer) return NULL;
     char **key=(char **)buffer, *value=(char *)(buffer + (count+1)*sizeof(char *));
     for (size_t i=0; i<hash->size; i++) {
         hash_entry_t entry;
