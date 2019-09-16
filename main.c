@@ -13,15 +13,32 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
+#include <time.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/queue.h>
+#include <sys/errno.h>
 #include "stringhash.h"
 
 // Example / test code
-int main()
+int main(int argc, char *argv[])
 {
-    stringhash_t hash = stringhash_create(0x10000);
+    uint64_t t1,t2;
+    uint64_t avg = 0;
+    size_t hashsize=0x200000, testsize=0x100000;
+
+    if (argc>1) {
+        testsize = strtoll(argv[1], NULL, 0);
+        printf("Set test size to %zu\n", testsize);
+    }
+    if (argc>2) {
+        hashsize = strtoll(argv[2], NULL, 0);
+        printf("Set hash size to %zu\n", hashsize);
+    }
+    t1 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    stringhash_t hash = stringhash_create(hashsize);
+    t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    printf("Created hash in %1.3f ms\n", (t2-t1)/1000000.0);
     stringhash_setKey(hash, "test", "has a value");
     char *value = stringhash_copyValueForKey(hash, "test");
     printf("value for hash{test}: \"%s\"\n", value);
@@ -32,32 +49,30 @@ int main()
     if (value) free(value);
     printf("Number of entries in hash: %zu\n", stringhash_count(hash));
     char key[65];
-    struct timeval t1,t2;
-    double avg = 0;
     size_t i;
-    for (i=0; i<0x10000; i++) {
+    t1 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    for (i=0; i<testsize; i++) {
         snprintf(key, 64, "%zu", i);
-        gettimeofday(&t1, NULL);
         stringhash_setKey(hash, key, key);
-        gettimeofday(&t2, NULL);
-        avg = (avg*i + (t2.tv_sec - t1.tv_sec)*1000000 + (t2.tv_usec - t1.tv_usec)) / (i + 1.0);
     }
-    printf("Tested %zu sets.  Average time %d ns\n", i, (int)(avg*1000));
+    t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    avg = (t2 - t1) / (i + 1);
+    printf("Tested %zu sets in %llu ms.  Average time %f ms\n", i, (t2-t1)/1000000, avg/1000000.0);
     size_t count = stringhash_count(hash);
     if (count != i+1) printf("Error incorrect count\n");
-    for (i=0; i<0x10000; i++) {
+    t1 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    for (i=0; i<testsize; i++) {
         snprintf(key, 64, "%zu", i);
-        gettimeofday(&t1, NULL);
         char *value = stringhash_copyValueForKey(hash, key);
-        gettimeofday(&t2, NULL);
-        avg = (avg*i + (t2.tv_sec - t1.tv_sec)*1000000 + (t2.tv_usec - t1.tv_usec)) / (i + 1.0);
         if (!value || strcmp(value, key) != 0) {
            printf("Error unexpected key value for key %s\n", key);
            break;
         }
         free(value);
     }
-    printf("Tested %zu retrieves.  Average time %d ns\n", i, (int)(avg*1000));
+    t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    avg = (t2 - t1) / (i + 1);
+    printf("Tested %zu retrieves in %llu ms.  Average time %f ms\n", i, (t2-t1)/1000000, avg/1000000.0);
     printf("Number of entries in hash: %zu\n", stringhash_count(hash));
     value = stringhash_copyValueForKey(hash, "test");
     printf("value for hash{test}: \"%s\"\n", value);
@@ -82,6 +97,9 @@ int main()
         free(allKeys);
     }
     printf("Destroying hash\n");
+    t1 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
     stringhash_destroy(hash);
+    t2 = clock_gettime_nsec_np(CLOCK_MONOTONIC);
+    printf("Destroyed hash in %1.3f ms\n", (t2-t1)/1000000.0);
     printf("Tests Completed\n");
 }

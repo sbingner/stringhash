@@ -10,10 +10,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <sys/errno.h>
 #include <sys/queue.h>
 #include "stringhash.h"
 
@@ -139,14 +141,28 @@ void stringhash_setKey(stringhash_t hash, const char *key, const char *value) {
     hash_entry_t entry = entryForKey(&hash->heads[idx], key, keylen);
     if (entry) {
         TAILQ_REMOVE(&hash->heads[idx], entry, entries);
-        if (entry->valuelen < valuelen) {
-            hash_entry_t newentry = malloc(sizeof(struct hash_entry) + keylen + valuelen + 2);
-            memcpy(newentry, entry, sizeof(struct hash_entry) + keylen + 1);
-            free(entry);
-            entry = newentry;
+        if (entry->valuelen != valuelen) {
+            hash_entry_t newEntry;
+            int i=0;
+            do {
+                newEntry = realloc(entry, sizeof(struct hash_entry) + keylen + valuelen + 2);
+            } while (newEntry == NULL && errno==ENOMEM && i++<100 && usleep(10)==0);
+            if (newEntry == NULL) {
+                fprintf(stderr, "FATAL ERROR: Unable to reallocate memory for entry.  Dropped.\n");
+                free(entry);
+                return;
+            }
+            entry = newEntry;
         }
     } else {
-        entry = malloc(sizeof(struct hash_entry) + keylen + valuelen + 2);
+        int i=0;
+        do {
+            entry = malloc(sizeof(struct hash_entry) + keylen + valuelen + 2);
+        } while (entry == NULL && errno==ENOMEM && i++<100 && usleep(10)==0);
+        if (entry == NULL) {
+            fprintf(stderr, "FATAL ERROR: Unable to allocate memory for entry.  Dropped.\n");
+            return;
+        }
         entry->keylen = keylen;
         memcpy(entry->key, key, keylen+1);
     }
