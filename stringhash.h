@@ -26,6 +26,7 @@ typedef struct stringhash* stringhash_t;
 
 stringhash_t stringhash_create(size_t size);
 void stringhash_destroy(stringhash_t hash);
+bool stringhash_hasKey(stringhash_t hash, const char *key);
 char *stringhash_copyValueForKey(stringhash_t hash, const char *key);
 void stringhash_setKey(stringhash_t hash, const char *key, const char *value);
 void stringhash_removeKey(stringhash_t hash, const char *key);

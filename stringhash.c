@@ -125,6 +125,13 @@ static hash_entry_t entryForKey(struct hash_head *head, const char *key, size_t 
 }
 
 EXPORT
+bool stringhash_hasKey(stringhash_t hash, const char *key) {
+    size_t keylen = strlen(key);
+    size_t idx = indexOf(hash, key, keylen);
+    return entryForKey(&hash->heads[idx], key, keylen)?true:false;
+}
+
+EXPORT
 char *stringhash_copyValueForKey(stringhash_t hash, const char *key) {
     size_t keylen = strlen(key);
     size_t idx = indexOf(hash, key, keylen);
