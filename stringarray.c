@@ -161,7 +161,7 @@ size_t stringarray_count(stringarray_t array) {
 EXPORT
 char **stringarray_copyAllValues(stringarray_t array) {
     size_t mem_size = sizeof(char*);
-    size_t count;
+    size_t count = 0;
 
     array_entry_t entry;
     TAILQ_FOREACH(entry, &array->head, entries) {
