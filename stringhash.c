@@ -35,6 +35,7 @@ TAILQ_HEAD(hash_head, hash_entry);
 
 struct stringhash {
     size_t size;
+    size_t bits;
     struct hash_head heads[];
 };
 
@@ -90,13 +91,23 @@ static uint64_t MurmurHash64A ( const void * key, int len, uint64_t seed )
 } 
 
 static size_t indexOf(stringhash_t hash, const char *key, size_t keylen) {
-    return MurmurHash64A(key, strlen(key), 0xcafebabedeadbeef) % hash->size; // Random seed chosen by fair dice roll
+    size_t index = MurmurHash64A(key, strlen(key), 0xcafebabedeadbeef); // Random seed chosen by fair dice roll
+    index ^= index >> hash->bits;
+    // Fibonacci
+    return (11400714819323198485llu * index) >> hash->bits;
 }
 
 EXPORT
 stringhash_t stringhash_create(size_t size) {
+    // Convert size to number of bits containing that size for speed and compatibility - sorry
+    unsigned int bits = 0;
+    while ((size >> bits) > 0) {
+        bits++;
+    }
+    size = (1<<bits);
     stringhash_t hash = malloc(sizeof(struct stringhash) + size * sizeof(struct hash_head));
     hash->size = size;
+    hash->bits = (64 - bits);
     for (size_t i=0; i<size; i++) {
         TAILQ_INIT(&hash->heads[i]);
     }
